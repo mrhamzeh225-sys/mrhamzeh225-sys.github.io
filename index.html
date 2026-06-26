@@ -3,128 +3,53 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
 <title>ST-HUNTER</title>
 
 <style>
 body {
   margin: 0;
-  font-family: sans-serif;
-  color: white;
-  text-align: center;
-  overflow: hidden;
-}
-
-/* بک‌گراند انیمیشنی */
-body::before {
-  content: "";
-  position: fixed;
-  width: 200%;
-  height: 200%;
-  background: linear-gradient(45deg, #000, #0f0, #00f, #000);
-  background-size: 400% 400%;
-  animation: bgMove 10s infinite linear;
-  z-index: -1;
-}
-
-@keyframes bgMove {
-  0% { transform: translate(0,0); }
-  50% { transform: translate(-25%,-25%); }
-  100% { transform: translate(0,0); }
-}
-
-.container {
   height: 100vh;
   display: flex;
-  flex-direction: column;
   justify-content: center;
+  align-items: center;
+  background: black;
+  font-family: sans-serif;
 }
 
 /* متن اصلی */
 h1 {
-  font-size: 45px;
-  color: #0f0;
-  text-shadow: 0 0 20px #0f0, 0 0 40px #0f0;
+  font-size: 60px;
+  color: red;
+  text-align: center;
+  text-shadow: 
+    0 0 10px red,
+    0 0 20px red,
+    0 0 40px red;
+  animation: glow 1.5s infinite alternate;
 }
 
-/* زیر متن */
-p {
-  font-size: 20px;
-}
-
-/* دکمه */
-.btn {
-  margin-top: 20px;
-  padding: 15px 30px;
-  background: #0f0;
-  color: black;
-  text-decoration: none;
-  border-radius: 10px;
-  font-size: 18px;
-  transition: 0.3s;
-}
-
-.btn:hover {
-  background: cyan;
-  transform: scale(1.1);
-}
-
-/* افکت باران دیجیتالی */
-canvas {
-  position: fixed;
-  top: 0;
-  left: 0;
-  z-index: -1;
+/* انیمیشن نور */
+@keyframes glow {
+  from {
+    text-shadow: 
+      0 0 10px red,
+      0 0 20px red;
+  }
+  to {
+    text-shadow: 
+      0 0 20px red,
+      0 0 40px red,
+      0 0 80px red;
+  }
 }
 </style>
+
 </head>
 
 <body>
 
-<canvas id="matrix"></canvas>
-
-<div class="container">
-  <h1>ساخته شده توسط ST-HUNTER</h1>
-  <p>به سایت گیمینگ من خوش اومدی 😈🔥</p>
-  <a href="#" class="btn">ورود به سایت</a>
-</div>
-
-<script>
-const canvas = document.getElementById("matrix");
-const ctx = canvas.getContext("2d");
-
-canvas.height = window.innerHeight;
-canvas.width = window.innerWidth;
-
-const letters = "01";
-const fontSize = 14;
-const columns = canvas.width / fontSize;
-
-const drops = [];
-for (let x = 0; x < columns; x++) {
-  drops[x] = 1;
-}
-
-function draw() {
-  ctx.fillStyle = "rgba(0,0,0,0.05)";
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-  ctx.fillStyle = "#0f0";
-  ctx.font = fontSize + "px monospace";
-
-  for (let i = 0; i < drops.length; i++) {
-    const text = letters[Math.floor(Math.random() * letters.length)];
-    ctx.fillText(text, i * fontSize, drops[i] * fontSize);
-
-    if (drops[i] * fontSize > canvas.height && Math.random() > 0.95) {
-      drops[i] = 0;
-    }
-
-    drops[i]++;
-  }
-}
-
-setInterval(draw, 33);
-</script>
+<h1>امیر حسین خر منه</h1>
 
 </body>
 </html>

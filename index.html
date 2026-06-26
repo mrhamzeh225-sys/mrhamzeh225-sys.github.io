@@ -3,112 +3,157 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
 <title>Call Of News</title>
 
 <style>
-body {
-  margin: 0;
-  font-family: Tahoma;
-  background: black;
-  color: white;
-  overflow: hidden;
+*{
+  margin:0;
+  padding:0;
+  box-sizing:border-box;
 }
 
-/* بک گراند گرادیانت متحرک */
-body::before {
-  content: "";
-  position: fixed;
-  width: 200%;
-  height: 200%;
-  background: linear-gradient(45deg, #000, #0f0, #111, #0f0);
-  animation: moveBg 8s linear infinite;
-  z-index: -2;
+body{
+  font-family: Tahoma, sans-serif;
+  background:#000;
+  color:#fff;
+  overflow:hidden;
 }
 
-@keyframes moveBg {
-  0% { transform: translate(0,0); }
-  50% { transform: translate(-25%,-25%); }
-  100% { transform: translate(0,0); }
+/* بکگراند گرادیانت اکشن */
+body::before{
+  content:"";
+  position:fixed;
+  width:200%;
+  height:200%;
+  background: radial-gradient(circle at center, #400000, #000);
+  animation:bgMove 12s linear infinite;
+  z-index:-2;
 }
 
-/* افکت ذرات */
-canvas {
-  position: fixed;
-  top: 0;
-  left: 0;
-  z-index: -1;
+@keyframes bgMove{
+  0%{transform:translate(0,0)}
+  50%{transform:translate(-25%,-25%)}
+  100%{transform:translate(0,0)}
 }
 
-/* وسط چین */
-.container {
-  height: 100vh;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
+/* ذرات */
+canvas{
+  position:fixed;
+  top:0;
+  left:0;
+  z-index:-1;
+}
+
+/* کانتینر اصلی */
+.container{
+  height:100vh;
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+  align-items:center;
+  text-align:center;
+  padding:20px;
 }
 
 /* تیتر بالا */
-.title {
-  position: absolute;
-  top: 30px;
-  font-size: 25px;
-  color: #0f0;
-  text-shadow: 0 0 10px #0f0;
+.top{
+  position:absolute;
+  top:20px;
+  font-size:18px;
+  color:#ff0000;
+  letter-spacing:2px;
+  text-shadow:0 0 10px red;
 }
 
 /* متن اصلی */
-h1 {
-  font-size: 55px;
-  color: white;
-  text-shadow: 
-    0 0 10px #0f0,
-    0 0 30px #0f0,
-    0 0 60px #0f0;
-  animation: glow 1.5s infinite alternate;
+h1{
+  font-size:clamp(32px,6vw,75px);
+  text-transform:uppercase;
+  letter-spacing:3px;
+  text-shadow:
+    0 0 10px red,
+    0 0 30px red,
+    0 0 60px red;
+  animation:glow 1.5s infinite alternate;
 }
 
-@keyframes glow {
-  from { text-shadow: 0 0 10px #0f0; }
-  to { text-shadow: 0 0 40px #0f0, 0 0 80px #0f0; }
+@keyframes glow{
+  from{ text-shadow:0 0 10px red;}
+  to{ text-shadow:0 0 50px red,0 0 100px red;}
 }
 
-/* دکمه */
-.btn {
-  margin-top: 30px;
-  padding: 15px 40px;
-  font-size: 20px;
-  background: #0f0;
-  color: black;
-  text-decoration: none;
-  border-radius: 12px;
-  transition: 0.3s;
-  box-shadow: 0 0 20px #0f0;
+/* دکمه حرفه‌ای */
+.btn{
+  margin-top:40px;
+  padding:15px 40px;
+  font-size:20px;
+  color:#ff0000;
+  text-decoration:none;
+  border:2px solid red;
+  border-radius:12px;
+  position:relative;
+  overflow:hidden;
+  transition:0.3s;
+  box-shadow:0 0 20px red;
 }
 
-.btn:hover {
-  background: white;
-  transform: scale(1.1);
-  box-shadow: 0 0 40px #0f0;
+/* افکت لیزری دکمه */
+.btn::before{
+  content:"";
+  position:absolute;
+  width:0;
+  height:100%;
+  top:0;
+  left:0;
+  background:red;
+  transition:0.4s;
+  z-index:-1;
+}
+
+.btn:hover::before{
+  width:100%;
+}
+
+.btn:hover{
+  color:#000;
+  transform:scale(1.1);
+  box-shadow:0 0 40px red;
+}
+
+/* لینک پایین */
+.link{
+  margin-top:15px;
+  font-size:14px;
+  color:#aaa;
+}
+
+/* ریسپانسیو */
+@media(max-width:600px){
+  h1{font-size:28px;}
+  .btn{font-size:16px;padding:12px 25px;}
 }
 </style>
 </head>
 
 <body>
 
-<canvas id="particles"></canvas>
+<canvas id="bg"></canvas>
 
-<div class="title">چنل بزرگ کالاف نیوز</div>
+<div class="top">چنل بزرگ کالاف نیوز</div>
 
 <div class="container">
   <h1>🔥 CALL OF NEWS 🔥</h1>
+
   <a href="https://ble.ir/call_of_news_fa" class="btn">
     ورود به کانال
   </a>
+
+  <div class="link">ble.ir/call_of_news_fa</div>
 </div>
 
 <script>
-const canvas = document.getElementById("particles");
+const canvas = document.getElementById("bg");
 const ctx = canvas.getContext("2d");
 
 canvas.width = window.innerWidth;
@@ -116,28 +161,31 @@ canvas.height = window.innerHeight;
 
 let particles = [];
 
-for (let i = 0; i < 100; i++) {
+for(let i=0;i<150;i++){
   particles.push({
-    x: Math.random() * canvas.width,
-    y: Math.random() * canvas.height,
-    size: Math.random() * 2,
-    speed: Math.random() * 2
+    x:Math.random()*canvas.width,
+    y:Math.random()*canvas.height,
+    size:Math.random()*2,
+    speed:Math.random()*2 + 0.5
   });
 }
 
-function draw() {
-  ctx.clearRect(0,0,canvas.width,canvas.height);
-  ctx.fillStyle = "#0f0";
+function draw(){
+  ctx.fillStyle="rgba(0,0,0,0.2)";
+  ctx.fillRect(0,0,canvas.width,canvas.height);
 
-  particles.forEach(p => {
+  ctx.fillStyle="red";
+
+  particles.forEach(p=>{
     ctx.beginPath();
-    ctx.arc(p.x, p.y, p.size, 0, Math.PI*2);
+    ctx.arc(p.x,p.y,p.size,0,Math.PI*2);
     ctx.fill();
 
     p.y += p.speed;
-    if (p.y > canvas.height) {
+
+    if(p.y > canvas.height){
       p.y = 0;
-      p.x = Math.random() * canvas.width;
+      p.x = Math.random()*canvas.width;
     }
   });
 

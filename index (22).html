@@ -1,0 +1,194 @@
+<!doctype html>
+<html lang="fa" dir="rtl"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>پخش زنده روضه</title>
+<style>
+:root{--g:#d4af37;--g2:#f3d98b}
+*{box-sizing:border-box}
+body{margin:0;background:#050403;color:#e8dfc4;font:15px/1.7 'Vazirmatn','Noto Naskh Arabic',system-ui,sans-serif}
+#stage{position:sticky;top:0;z-index:5;margin:0 auto;width:min(100vw,calc(100vh*16/9));aspect-ratio:16/9;background:#000;overflow:hidden;container-type:inline-size}
+#stage:fullscreen{width:100vw;height:100vh}
+canvas{width:100%;height:100%;object-fit:contain;display:block}
+#v{position:fixed;opacity:0;width:1px;height:1px;pointer-events:none}
+#ttl{position:absolute;top:2.2cqw;left:0;right:0;text-align:center;line-height:1.5;pointer-events:none;text-shadow:0 2px 10px #000}
+#ttl b{display:block;font-size:calc(var(--t,3.4)*1cqw);color:var(--g2);font-weight:700}
+#ttl span{font-size:calc(var(--t,3.4)*.58cqw);color:#cdb978}
+#sub{position:absolute;left:5%;right:5%;bottom:var(--sb,8%);text-align:center;direction:rtl;font:calc(var(--s,3.4)*1cqw)/1.9 'Amiri','Scheherazade New','Noto Naskh Arabic',serif;color:#f7e6a8;text-shadow:0 2px 8px #000,0 0 3px #000;opacity:0;transition:opacity .45s;pointer-events:none}
+#sub.on{opacity:1}#sub small{display:block;font-size:.6em;opacity:.55}
+#bd{position:absolute;top:1.5cqw;left:1.5cqw;display:flex;gap:.8cqw;direction:rtl}
+.b{font-size:max(9px,1.5cqw);padding:.1em .7em;border-radius:99px;border:1px solid #5a4a1c;background:#000a;color:#b9a665}
+.b.ok{border-color:var(--g);color:var(--g2)}
+#fps{position:absolute;bottom:1cqw;left:1.5cqw;font:max(9px,1.4cqw) monospace;color:#8a7a45}
+main{max-width:720px;margin:0 auto;padding:12px 14px 60px}
+section{border:1px solid #3a2f12;border-radius:12px;padding:10px 12px;margin:12px 0;background:#0d0a06}
+h3{margin:0 0 6px;color:var(--g);font-size:16px}
+label{display:flex;justify-content:space-between;gap:10px;align-items:center;margin:6px 0}
+select,button,input[type=text],textarea{background:#17120a;color:#f1e7c6;border:1px solid #5a4a1c;border-radius:8px;padding:8px 10px;font:inherit;max-width:100%}
+button{background:linear-gradient(#e2bf55,#a8821f);color:#1a1200;font-weight:700;border:0;margin:3px 0}
+button.s{background:#241b0a;color:var(--g2);border:1px solid var(--g)}
+input[type=range]{flex:1;accent-color:var(--g)}
+textarea{width:100%;height:90px;direction:rtl}
+#msg{background:#2a0f0c;border:1px solid #a33;border-radius:10px;padding:10px;color:#ffd5cf}
+progress{width:100%;accent-color:var(--g)}
+#dbg{font:13px/1.8 serif;color:#9d9;min-height:2em;white-space:pre-wrap}
+</style></head><body>
+<div id="stage"><canvas id="cv" width="1280" height="720"></canvas>
+<div id="ttl"><b>روضه حضرت فاطمه (س)</b><span>منزل آقای محمود ناظری</span></div>
+<div id="sub"></div>
+<div id="bd"><span class="b" id="sc">دوربین: خاموش</span><span class="b" id="sb">حذف پس‌زمینه: خاموش</span><span class="b" id="sz">زیارت: خاموش</span></div>
+<div id="fps"></div></div>
+<video id="v" playsinline muted></video>
+<main>
+<p id="msg" hidden></p>
+<section><h3>دوربین</h3>
+<label>دوربین<select id="facing"><option value="environment">عقب</option><option value="user">جلو (سلفی)</option></select></label>
+<label>انتخاب دقیق<select id="dev"><option value="">پیش‌فرض</option></select></label>
+<button id="bc">شروع دوربین</button> <button id="bf" class="s">تمام‌صفحه</button>
+<label>زوم<input id="zoom" type="range" min="1" max="3" step=".05" value="1"></label>
+<label>جابه‌جایی افقی<input id="px" type="range" min="-40" max="40" value="0"></label>
+<label>جابه‌جایی عمودی<input id="py" type="range" min="-40" max="40" value="0"></label>
+</section>
+<section><h3>حذف پس‌زمینه (MediaPipe)</h3>
+<label>فعال‌سازی<input id="bgOn" type="checkbox"></label>
+<label>مدل<select id="model"><option value="sel">Selfie Segmenter (سبک)</option><option value="multi">Selfie Multiclass 256 (دقیق‌تر؛ مو و لباس)</option></select></label>
+<label>کیفیت<select id="q"><option value="auto">خودکار</option><option value="high">بالا ۷۲۰p</option><option value="bal">متعادل ۵۴۰p</option><option value="low">سبک ۳۶۰p</option></select></label>
+<label>پس‌زمینه<select id="bg"><option value="black">مشکی ساده</option><option value="gold">مشکی-طلایی (نقش هندسی)</option><option value="image">تصویر دلخواه</option><option value="blur">محو کردن</option></select></label>
+<label>تصویر<input id="bgf" type="file" accept="image/*"></label>
+<label>معکوس‌کردن ماسک (اگر شخص حذف شد)<input id="inv" type="checkbox"></label>
+<progress id="prog" value="0" max="100" hidden></progress><small id="pt"></small>
+</section>
+<section><h3>تشخیص زیارت عاشورا</h3>
+<button id="bs">شروع تشخیص</button>
+<label>لهجه<select id="lang"><option>ar-SA</option><option>ar-IQ</option><option>ar-KW</option><option>ar-EG</option></select></label>
+<label>نمایش زیرنویس<input id="subOn" type="checkbox" checked></label>
+<label>پایان زیرنویس پس از سکوت (ثانیه)<input id="hold" type="range" min="3" max="20" value="8"></label>
+<details><summary>متن مرجع (<span id="cnt"></span>)</summary>
+<p>متن داخلی فقط نمونهٔ آزمایشی است. متن کامل و معتبر با اعراب را (سطر به سطر) اینجا بچسبانید یا فایل بارگذاری کنید.</p>
+<textarea id="ref"></textarea><input id="ref-f" type="file" accept=".txt"><br><button id="rs" class="s">ذخیره متن مرجع</button></details>
+</section>
+<section><h3>ظاهر و عیب‌یابی</h3>
+<label>اندازه عنوان<input id="ts" type="range" min="2" max="6" step=".1" value="3.4"></label>
+<label>اندازه زیرنویس<input id="ss" type="range" min="2" max="7" step=".1" value="3.4"></label>
+<label>ارتفاع زیرنویس<input id="sp" type="range" min="2" max="40" value="8"></label>
+<label>نمایش متن تشخیص‌شده<input id="dbgOn" type="checkbox"></label>
+<div id="dbg" hidden></div><small id="info"></small>
+</section></main>
+
+<script id="core">
+var SAMPLE="السَّلامُ عَلَيْكَ يَا أَبَا عَبْدِ اللهِ\nالسَّلامُ عَلَيْكَ يَا ابْنَ رَسُولِ اللهِ\nالسَّلامُ عَلَيْكَ يَا ابْنَ أَمِيرِ الْمُؤْمِنِينَ وَابْنَ سَيِّدِ الْوَصِيِّينَ\nالسَّلامُ عَلَيْكَ يَا ابْنَ فَاطِمَةَ سَيِّدَةِ نِسَاءِ الْعَالَمِينَ\nالسَّلامُ عَلَيْكَ يَا ثَارَ اللهِ وَابْنَ ثَارِهِ وَالْوِتْرَ الْمَوْتُورَ\nالسَّلامُ عَلَيْكَ وَعَلَى الْأَرْوَاحِ الَّتِي حَلَّتْ بِفِنَائِكَ";
+var T=[],S=[],R=[],pos=-1,hit=false,_c={};
+function norm(s){return s.replace(/[\u064B-\u065F\u0670\u0640\u06D6-\u06ED]/g,'').replace(/[أإآٱ]/g,'ا').replace(/[ىیئ]/g,'ي').replace(/ک/g,'ك').replace(/[ةھ]/g,'ه').replace(/ؤ/g,'و').replace(/[^\u0621-\u064A\s]/g,' ').replace(/\s+/g,' ').trim()}
+function load(txt){R=txt.split(/\n+/).map(function(s){return s.trim()}).filter(Boolean);T=[];S=[];R.forEach(function(l,i){norm(l).split(' ').filter(Boolean).forEach(function(w){T.push(w);S.push(i)})});pos=-1}
+function lev(a,b){var p=[],i,j;for(j=0;j<=b.length;j++)p[j]=j;for(i=1;i<=a.length;i++){var q=[i];for(j=1;j<=b.length;j++)q[j]=Math.min(p[j]+1,q[j-1]+1,p[j-1]+(a[i-1]===b[j-1]?0:1));p=q}return p[b.length]}
+function eq(a,b){if(a===b)return true;if(a.length<4||b.length<4)return false;var k=a+'|'+b;if(k in _c)return _c[k];return _c[k]=1-lev(a,b)/Math.max(a.length,b.length)>=.7}
+function align(W,p,hi,span){var j=p,m=0,s=0;for(var i=0;i<W.length;i++){for(var k=j;k<Math.min(T.length,hi,j+span);k++)if(eq(W[i],T[k])){m++;if(W[i].length>3)s++;j=k+1;break}}return{m:m,s:s,end:j}}
+function feed(t){hit=false;var W=norm(t).split(' ').filter(Boolean).slice(-8);if(W.length<3)return pos;
+if(pos>=0){var r=align(W.slice(-5),Math.max(0,pos-3),pos+30,4);if(r.m>=3&&r.s>=2&&r.end-1>=pos-2){pos=r.end-1;hit=true;return pos}}
+if(W.length>=5){var best=null;for(var p=0;p<T.length;p++){var a=align(W,p,T.length,3);if(a.m>=5&&a.s>=3&&a.m>=.6*W.length&&(!best||a.m>best.m||(a.m===best.m&&Math.abs(a.end-pos)<Math.abs(best.end-pos))))best=a}
+if(best){pos=best.end-1;hit=true}}return pos}
+</script>
+
+<script type="module">
+const $=id=>document.getElementById(id),cv=$('cv'),ctx=cv.getContext('2d'),vid=$('v');
+const pc=document.createElement('canvas'),pctx=pc.getContext('2d'),mc=document.createElement('canvas'),mctx=mc.getContext('2d'),pat=document.createElement('canvas');
+const V='https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.21',G='https://storage.googleapis.com/mediapipe-models/image_segmenter/';
+const M={sel:G+'selfie_segmenter/float16/latest/selfie_segmenter.tflite',multi:G+'selfie_multiclass_256x256/float32/latest/selfie_multiclass_256x256.tflite'};
+const Q={high:[1280,720,1],bal:[960,540,2],low:[640,360,3]},LV=['high','bal','low'];
+let stream,raf,seg,segKey,ready=false,fr=0,fc=0,ft=performance.now(),lvl=0,prev,bgImg,rec,want=false,lastHit=0,shown=-2,wl;
+const st=(id,t,ok)=>{const e=$(id);e.textContent=t;e.className='b'+(ok?' ok':'')};
+const msg=t=>{$('msg').hidden=!t;$('msg').textContent=t||'';if(t)scrollTo(0,0)};
+const secure=()=>isSecureContext||(msg('این صفحه روی HTTP یا file:// باز شده و Chrome دوربین و میکروفون را فقط در HTTPS (یا localhost) اجازه می‌دهد. راه‌حل: انتشار روی HTTPS مثل Cloudflare Pages یا GitHub Pages.'),false);
+
+/* ---------- camera ---------- */
+function camErr(e){const n=e.name,m=e.message||'',E={
+NotAllowedError:/system/i.test(m)?'اندروید دسترسی دوربین را برای Chrome بسته است: تنظیمات گوشی ← برنامه‌ها ← Chrome ← مجوزها ← دوربین ← اجازه.':'مجوز دوربین رد یا مسدود شده است: روی نماد قفل کنار آدرس بزنید ← مجوزها ← دوربین ← اجازه و صفحه را تازه کنید. اگر در Chrome ← تنظیمات ← تنظیمات سایت ← دوربین مسدود است، آن را آزاد کنید.',
+NotFoundError:'دوربینی روی این دستگاه پیدا نشد.',
+NotReadableError:'دوربین در اختیار برنامه یا برگهٔ دیگری است. آن را ببندید و دوباره تلاش کنید.',
+OverconstrainedError:'دوربین انتخاب‌شده در دسترس نیست؛ «پیش‌فرض» را انتخاب کنید.',
+SecurityError:'مرورگر دسترسی را به‌دلیل سیاست امنیتی (HTTPS یا iframe) مسدود کرد.',
+AbortError:'راه‌اندازی دوربین قطع شد؛ دوباره تلاش کنید.'};
+msg(E[n]||`خطای دوربین (${n}): ${m}`);st('sc','دوربین: خطا')}
+async function startCam(){msg();if(!secure())return;
+if(!navigator.mediaDevices?.getUserMedia)return msg('این مرورگر از getUserMedia پشتیبانی نمی‌کند. از Chrome اندروید به‌روز استفاده کنید.');
+stopCam();const d=$('dev').value,c={width:{ideal:1280},height:{ideal:720},frameRate:{ideal:30}};d?c.deviceId={exact:d}:c.facingMode={ideal:$('facing').value};
+try{stream=await navigator.mediaDevices.getUserMedia({video:c,audio:false})}catch(e){return camErr(e)}
+vid.srcObject=stream;try{await vid.play()}catch(e){return msg('پخش تصویر دوربین ممکن نشد: '+e.message)}
+stream.getVideoTracks()[0].onended=()=>{msg('ارتباط با دوربین قطع شد (برنامه دیگری آن را گرفته یا از دستگاه جدا شده). دوباره «شروع دوربین» را بزنید.');stopCam()};
+try{wl=await navigator.wakeLock?.request('screen')}catch{}
+try{const ds=(await navigator.mediaDevices.enumerateDevices()).filter(x=>x.kind==='videoinput'),s=$('dev'),cur=s.value;
+s.innerHTML='<option value="">پیش‌فرض</option>'+ds.map((x,i)=>`<option value="${x.deviceId}">${x.label||'دوربین '+(i+1)}</option>`).join('');s.value=cur}catch{}
+st('sc','دوربین: روشن',1);$('bc').textContent='توقف دوربین';draw()}
+function stopCam(){cancelAnimationFrame(raf);stream?.getTracks().forEach(t=>t.stop());stream=null;vid.srcObject=null;wl?.release?.();wl=null;
+ctx.clearRect(0,0,cv.width,cv.height);st('sc','دوربین: خاموش');$('bc').textContent='شروع دوربین';$('fps').textContent=''}
+$('bc').onclick=()=>stream?stopCam():startCam();
+$('dev').onchange=$('facing').onchange=()=>stream&&startCam();
+$('bf').onclick=async()=>{try{await $('stage').requestFullscreen();await screen.orientation?.lock?.('landscape')}catch{}};
+
+/* ---------- segmentation ---------- */
+async function loadSeg(){const key=$('model').value;if(seg&&segKey===key)return;seg?.close();seg=null;ready=false;
+st('sb','حذف پس‌زمینه: بارگذاری…');$('prog').hidden=false;
+try{const mp=await import(V+'/vision_bundle.mjs'),fs=await mp.FilesetResolver.forVisionTasks(V+'/wasm');
+const r=await fetch(M[key]);if(!r.ok)throw Error('HTTP '+r.status);
+const tot=+r.headers.get('content-length')||0,rd=r.body.getReader(),ch=[];let got=0;
+for(;;){const{done,value}=await rd.read();if(done)break;ch.push(value);got+=value.length;$('prog').value=tot?got/tot*100:0;$('pt').textContent=tot?`مدل: ${(got/tot*100|0)}٪`:`مدل: ${(got/1e6).toFixed(1)}MB`}
+const buf=new Uint8Array(got);let o=0;for(const c of ch){buf.set(c,o);o+=c.length}
+let last,dl;for(const d of['GPU','CPU']){try{seg=await mp.ImageSegmenter.createFromOptions(fs,{baseOptions:{modelAssetBuffer:buf,delegate:d},runningMode:'VIDEO',outputConfidenceMasks:true,outputCategoryMask:false});dl=d;break}catch(e){last=e}}
+if(!seg)throw last;segKey=key;prev=null;st('sb','حذف پس‌زمینه: فعال ('+dl+')',1);$('info').textContent='پردازش: '+dl}
+catch(e){$('bgOn').checked=false;st('sb','حذف پس‌زمینه: خطا');msg('بارگذاری مدل یا کتابخانه ناموفق بود (نیاز به اینترنت و دسترسی به cdn.jsdelivr.net و storage.googleapis.com): '+e.message)}
+$('prog').hidden=true}
+$('bgOn').onchange=()=>{if($('bgOn').checked)loadSeg();else{ready=false;st('sb','حذف پس‌زمینه: خاموش')}};
+$('model').onchange=()=>$('bgOn').checked&&loadSeg();
+$('bgf').onchange=e=>{const f=e.target.files[0];if(!f)return;const i=new Image();i.onload=()=>{bgImg=i;$('bg').value='image'};i.src=URL.createObjectURL(f)};
+function onMask(r){const m=r.confidenceMasks;if(!m?.[0])return;const w=m[0].width,h=m[0].height,a=m[0].getAsFloat32Array(),two=m.length>1,iv=$('inv').checked;
+if(mc.width!==w||mc.height!==h||!prev){mc.width=w;mc.height=h;prev=new Float32Array(w*h)}
+const id=mctx.createImageData(w,h),d=id.data;
+for(let i=0;i<a.length;i++){let p=two?1-a[i]:a[i];if(iv)p=1-p;p=p<.3?0:p>.7?1:(p-.3)/.4;p=prev[i]=prev[i]*.45+p*.55;d[i*4+3]=p*255}
+mctx.putImageData(id,0,0);ready=true;m.forEach(x=>x.close())}
+
+/* ---------- render ---------- */
+function mkPat(){const W=cv.width,H=cv.height;pat.width=W;pat.height=H;const c=pat.getContext('2d');c.fillStyle='#0b0907';c.fillRect(0,0,W,H);c.strokeStyle='rgba(212,175,55,.26)';c.lineWidth=Math.max(1,W/900);const s=W/16;
+for(let y=s/2;y<H+s;y+=s)for(let x=s/2;x<W+s;x+=s){c.save();c.translate(x,y);for(let k=0;k<2;k++){c.rotate(k*Math.PI/4);c.strokeRect(-s*.35,-s*.35,s*.7,s*.7)}c.restore()}
+c.lineWidth=W/220;c.strokeStyle='#d4af37';c.strokeRect(W*.015,W*.015,W*.97,H-W*.03)}
+function cover(img,w,h){const s=Math.max(cv.width/w,cv.height/h);return[(cv.width-w*s)/2,(cv.height-h*s)/2,w*s,h*s]}
+function draw(){raf=requestAnimationFrame(draw);if(vid.readyState<2||!vid.videoWidth)return;
+const k=$('q').value==='auto'?LV[lvl]:$('q').value,[W,H,step]=Q[k];if(cv.width!==W){cv.width=pc.width=W;cv.height=pc.height=H;mkPat()}
+const z=+$('zoom').value,vw=vid.videoWidth,vh=vid.videoHeight,s=Math.max(W/vw,H/vh)*z,r=[(W-vw*s)/2+$('px').value*W/100,(H-vh*s)/2+$('py').value*H/100,vw*s,vh*s];
+const on=$('bgOn').checked&&seg;
+if(on&&fr++%step===0){try{seg.segmentForVideo(vid,performance.now(),onMask)}catch(e){console.warn(e)}}
+if(on&&ready){const b=$('bg').value;
+if(b==='blur'){ctx.filter='blur(16px)';ctx.drawImage(vid,...r);ctx.filter='none'}
+else if(b==='image'&&bgImg)ctx.drawImage(bgImg,...cover(bgImg,bgImg.width,bgImg.height));
+else if(b==='gold')ctx.drawImage(pat,0,0);else{ctx.fillStyle='#000';ctx.fillRect(0,0,W,H)}
+pctx.globalCompositeOperation='source-over';pctx.clearRect(0,0,W,H);pctx.drawImage(vid,...r);pctx.globalCompositeOperation='destination-in';pctx.drawImage(mc,...r);ctx.drawImage(pc,0,0)}
+else{ctx.fillStyle='#000';ctx.fillRect(0,0,W,H);ctx.drawImage(vid,...r)}
+fc++;const n=performance.now();if(n-ft>1000){const f=fc*1000/(n-ft);fc=0;ft=n;$('fps').textContent=`${f.toFixed(0)} fps · ${W}×${H}`;
+if($('q').value==='auto'&&on&&f<15&&lvl<2){lvl++;fr=0}}}
+
+/* ---------- ziyarat ---------- */
+const spErr=e=>{const E={'not-allowed':'مجوز میکروفون رد شده است: نماد قفل کنار آدرس ← مجوزها ← میکروفون ← اجازه. اگر درست نشد: تنظیمات اندروید ← برنامه‌ها ← Chrome ← مجوزها ← میکروفون.','service-not-allowed':'سرویس تشخیص گفتار در دسترس یا مجاز نیست (Google/خدمات صوتی گوشی را بررسی کنید یا مرورگر پشتیبانی نمی‌کند).','audio-capture':'میکروفونی پیدا نشد یا برنامهٔ دیگری آن را اشغال کرده است.','network':'تشخیص گفتار به اینترنت نیاز دارد و اتصال به سرویس برقرار نشد.','language-not-supported':'این لهجه/زبان پشتیبانی نمی‌شود؛ مورد دیگری را انتخاب کنید.'};
+if(e in E){msg(E[e]);stopSp()}else if(e!=='no-speech'&&e!=='aborted')msg('خطای تشخیص گفتار: '+e)};
+function spawn(){const SR=window.SpeechRecognition||window.webkitSpeechRecognition;rec=new SR();rec.lang=$('lang').value;rec.continuous=true;rec.interimResults=true;
+rec.onstart=()=>st('sz','زیارت: در حال گوش‌دادن',1);
+rec.onresult=e=>{const t=e.results[e.results.length-1][0].transcript;$('dbg').textContent=t;const p=feed(t);if(hit){lastHit=Date.now();show(p)}};
+rec.onerror=e=>spErr(e.error);rec.onend=()=>{if(want)setTimeout(()=>{try{spawn()}catch{}},350)};
+try{rec.start()}catch(e){msg('شروع تشخیص گفتار ممکن نشد: '+e.message)}}
+function startSp(){msg();if(!secure())return;if(!(window.SpeechRecognition||window.webkitSpeechRecognition))return msg('این مرورگر Web Speech API ندارد؛ از Chrome اندروید استفاده کنید.');
+want=true;spawn();$('bs').textContent='توقف تشخیص'}
+function stopSp(){want=false;try{rec?.abort()}catch{}hide();st('sz','زیارت: خاموش');$('bs').textContent='شروع تشخیص'}
+$('bs').onclick=()=>want?stopSp():startSp();
+function show(p){if(!$('subOn').checked)return;const i=S[p];if(i===shown)return;shown=i;const e=$('sub');e.innerHTML=`${R[i]}${R[i+1]?`<small>${R[i+1]}</small>`:''}`;e.classList.add('on');st('sz','زیارت: همگام',1)}
+function hide(){$('sub').classList.remove('on');shown=-2;pos=-1}
+setInterval(()=>{if(shown!==-2&&Date.now()-lastHit>$('hold').value*1000){hide();if(want)st('sz','زیارت: در انتظار',1)}},500);
+function setRef(t){load(t);$('ref').value=t;$('cnt').textContent=`${R.length} سطر، ${T.length} کلمه`}
+try{setRef(localStorage.getItem('ref')||SAMPLE)}catch{setRef(SAMPLE)}
+$('rs').onclick=()=>{setRef($('ref').value);try{localStorage.setItem('ref',$('ref').value)}catch{}};
+$('ref-f').onchange=async e=>{const f=e.target.files[0];if(f)setRef(await f.text())};
+
+/* ---------- misc ---------- */
+const css=(v,id,u='')=>$(id).oninput=()=>$('stage').style.setProperty(v,$(id).value+u);
+css('--t','ts');css('--s','ss');css('--sb','sp','%');
+$('dbgOn').onchange=()=>$('dbg').hidden=!$('dbgOn').checked;
+$('sub').onclick=null;
+document.addEventListener('visibilitychange',()=>{if(!document.hidden&&stream&&stream.getVideoTracks()[0].readyState==='ended')msg('دوربین هنگام خروج از صفحه قطع شد؛ دوباره «شروع دوربین» را بزنید.')});
+addEventListener('pagehide',()=>{stopCam();stopSp();seg?.close()});
+</script></body></html>
